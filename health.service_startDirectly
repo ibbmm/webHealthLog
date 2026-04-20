@@ -1,0 +1,13 @@
+[Unit]
+Description=Health Data Management Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/webHealthLog
+ExecStart=/usr/bin/python3 app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

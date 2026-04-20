@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康数据管理</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 64px;
+            z-index: 99;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .nav-tab.active {
+            color: #667eea;
+        }
+        
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 3px;
+            background: #667eea;
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .content {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .type-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .type-tab {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .type-tab.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+            color: #667eea;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        
+        .filter-btn {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .date-range {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        .list-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .item-time {
+            color: #999;
+            font-size: 13px;
+        }
+        
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .item-values {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .value-item {
+            text-align: center;
+        }
+        
+        .value-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+        
+        .value-number {
+            font-size: 20px;
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .item-remark {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .chart-container {
+            width: 100%;
+            height: 350px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            .content {
+                padding: 12px;
+            }
+            
+            .card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🩺 健康数据管理</h1>
+        <button class="logout-btn" onclick="location.href='/logout'">退出登录</button>
+    </div>
+    
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showPage('input')">📝 数据录入</button>
+        <button class="nav-tab" onclick="showPage('history')">📋 历史记录</button>
+        <button class="nav-tab" onclick="showPage('chart')">📈 趋势图表</button>
+        <button class="nav-tab" onclick="showPage('settings')">⚙️ 设置</button>
+    </div>
+    
+    <div class="content">
+        <div id="page-input" class="page active">
+            <div class="card">
+                <div class="type-tabs">
+                    <button class="type-tab active" onclick="showInputType('blood')">血压</button>
+                    <button class="type-tab" onclick="showInputType('uric')">血尿酸</button>
+                </div>
+                
+                <form id="blood-form">
+                    <div class="card-title">📊 录入血压数据</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>收缩压 (mmHg)</label>
+                            <input type="number" name="systolic" required placeholder="如: 120">
+                        </div>
+                        <div class="form-group">
+                            <label>舒张压 (mmHg)</label>
+                            <input type="number" name="diastolic" required placeholder="如: 80">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>心率 (次/分)</label>
+                            <input type="number" name="heart_rate" placeholder="如: 72">
+                        </div>
+                        <div class="form-group">
+                            <label>测量时间</label>
+                            <input type="datetime-local" name="measure_time" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <textarea name="remark" rows="2" placeholder="可选，如: 早晨空腹测量"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">提交数据</button>
+                </form>
+                
+                <form id="uric-form" style="display: none;">
+                    <div class="card-title">🧪 录入血尿酸数据</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>血尿酸值 (μmol/L)</label>
+                            <input type="number" step="0.1" name="value" required placeholder="如: 420">
+                        </div>
+                        <div class="form-group">
+                            <label>测量时间</label>
+                            <input type="datetime-local" name="measure_time" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <textarea name="remark" rows="2" placeholder="可选，如: 体检结果"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">提交数据</button>
+                </form>
+            </div>
+        </div>
+        
+        <div id="page-history" class="page">
+            <div class="card">
+                <div class="type-tabs">
+                    <button class="type-tab active" onclick="showHistoryType('blood')">血压记录</button>
+                    <button class="type-tab" onclick="showHistoryType('uric')">血尿酸记录</button>
+                </div>
+                
+                <div class="filter-bar">
+                    <button class="filter-btn active" onclick="filterHistory('today')">今日</button>
+                    <button class="filter-btn" onclick="filterHistory('7days')">近7天</button>
+                    <button class="filter-btn" onclick="filterHistory('30days')">近30天</button>
+                    <button class="filter-btn" onclick="filterHistory('custom')">自定义</button>
+                </div>
+                
+                <div class="date-range" id="date-range" style="display: none;">
+                    <div class="form-group">
+                        <input type="date" id="start-date">
+                    </div>
+                    <div class="form-group">
+                        <input type="date" id="end-date">
+                    </div>
+                </div>
+                
+                <div id="history-list"></div>
+            </div>
+        </div>
+        
+        <div id="page-chart" class="page">
+            <div class="card">
+                <div class="type-tabs">
+                    <button class="type-tab active" onclick="showChartType('blood')">血压趋势</button>
+                    <button class="type-tab" onclick="showChartType('uric')">血尿酸趋势</button>
+                </div>
+                
+                <div class="filter-bar">
+                    <button class="filter-btn active" onclick="filterChart('7days')">近7天</button>
+                    <button class="filter-btn" onclick="filterChart('30days')">近30天</button>
+                    <button class="filter-btn" onclick="filterChart('90days')">近90天</button>
+                </div>
+                <div class="filter-bar" id="time-filter">
+                    <button class="filter-btn active" onclick="filterTimePeriod('all')">全部时段</button>
+                    <button class="filter-btn" onclick="filterTimePeriod('morning')">早晨 (6:00-12:00)</button>
+                    <button class="filter-btn" onclick="filterTimePeriod('afternoon')">中午 (12:00-18:00)</button>
+                    <button class="filter-btn" onclick="filterTimePeriod('evening')">晚上 (18:00-24:00)</button>
+                </div>
+                
+                <div id="blood-chart" class="chart-container"></div>
+                <div id="uric-chart" class="chart-container" style="display: none;"></div>
+            </div>
+        </div>
+        
+        <div id="page-settings" class="page">
+            <div class="card">
+                <div class="card-title">🔒 密码修改</div>
+                <form id="password-form">
+                    <div class="form-group">
+                        <label>当前密码</label>
+                        <input type="password" name="current_password" required placeholder="请输入当前密码">
+                    </div>
+                    <div class="form-group">
+                        <label>新密码</label>
+                        <input type="password" name="new_password" required placeholder="请输入新密码">
+                    </div>
+                    <div class="form-group">
+                        <label>确认新密码</label>
+                        <input type="password" name="confirm_password" required placeholder="请再次输入新密码">
+                    </div>
+                    <button type="submit" class="submit-btn">修改密码</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">💾 数据备份</div>
+                <div style="text-align: center; padding: 20px;">
+                    <p>点击下方按钮下载数据库备份文件</p>
+                    <a href="/api/backup" class="submit-btn" style="display: inline-block; width: auto; margin-top: 10px;">📤 下载备份</a>
+                    <p style="margin-top: 10px; color: #666; font-size: 13px;">备份文件：health_data.db</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📊 数据统计</div>
+                <div id="data-stats"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentPage = 'input';
+        let currentHistoryType = 'blood';
+        let currentChartType = 'blood';
+        let currentHistoryFilter = 'today';
+        let currentChartFilter = '7days';
+        let currentTimePeriod = 'all';
+        let bloodChart, uricChart;
+        
+        function showPage(page) {
+            currentPage = page;
+            document.querySelectorAll('.nav-tab').forEach((tab, i) => {
+                tab.classList.toggle('active', ['input', 'history', 'chart', 'settings'][i] === page);
+            });
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + page).classList.add('active');
+            
+            if (page === 'history') loadHistory();
+            if (page === 'chart') loadCharts();
+            if (page === 'settings') loadDataStats();
+        }
+        
+        function showInputType(type) {
+            document.querySelectorAll('#page-input .type-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压' : '血尿酸'));
+            });
+            document.getElementById('blood-form').style.display = type === 'blood' ? 'block' : 'none';
+            document.getElementById('uric-form').style.display = type === 'uric' ? 'block' : 'none';
+            
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            const datetime = now.toISOString().slice(0, 16);
+            document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+                if (!input.value) input.value = datetime;
+            });
+        }
+        
+        function showHistoryType(type) {
+            currentHistoryType = type;
+            document.querySelectorAll('#page-history .type-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压记录' : '血尿酸记录'));
+            });
+            loadHistory();
+        }
+        
+        function showChartType(type) {
+            currentChartType = type;
+            document.querySelectorAll('#page-chart .type-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压趋势' : '血尿酸趋势'));
+            });
+            document.getElementById('blood-chart').style.display = type === 'blood' ? 'block' : 'none';
+            document.getElementById('uric-chart').style.display = type === 'uric' ? 'block' : 'none';
+            loadCharts();
+        }
+        
+        function filterHistory(filter) {
+            currentHistoryFilter = filter;
+            document.querySelectorAll('#page-history .filter-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', ['today', '7days', '30days', 'custom'][i] === filter);
+            });
+            document.getElementById('date-range').style.display = filter === 'custom' ? 'grid' : 'none';
+            loadHistory();
+        }
+        
+        function filterChart(filter) {
+            currentChartFilter = filter;
+            document.querySelectorAll('#page-chart .filter-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', ['7days', '30days', '90days'][i] === filter);
+            });
+            loadCharts();
+        }
+        
+        function filterTimePeriod(period) {
+            currentTimePeriod = period;
+            document.querySelectorAll('#time-filter .filter-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', ['all', 'morning', 'afternoon', 'evening'][i] === period);
+            });
+            loadCharts();
+        }
+        
+        function getDateRange(filter) {
+            const now = new Date();
+            const today = now.toISOString().slice(0, 10);
+            let startDate, endDate;
+            
+            switch(filter) {
+                case 'today':
+                    startDate = endDate = today;
+                    break;
+                case '7days':
+                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                    endDate = today;
+                    break;
+                case '30days':
+                case '90days':
+                    const days = filter === '30days' ? 30 : 90;
+                    startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                    endDate = today;
+                    break;
+                case 'custom':
+                    startDate = document.getElementById('start-date').value;
+                    endDate = document.getElementById('end-date').value;
+                    if (!startDate || !endDate) return null;
+                    break;
+            }
+            return { startDate, endDate };
+        }
+        
+        async function loadHistory() {
+            const range = getDateRange(currentHistoryFilter);
+            if (!range && currentHistoryFilter === 'custom') return;
+            
+            const url = currentHistoryType === 'blood' 
+                ? '/api/blood-pressure' 
+                : '/api/uric-acid';
+            
+            const params = new URLSearchParams();
+            if (range) {
+                params.append('start_date', range.startDate);
+                params.append('end_date', range.endDate);
+            }
+            
+            const res = await fetch(url + '?' + params.toString());
+            const data = await res.json();
+            
+            renderHistory(data);
+        }
+        
+        function renderHistory(data) {
+            const container = document.getElementById('history-list');
+            
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>暂无数据</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = data.map(item => {
+                if (currentHistoryType === 'blood') {
+                    return `
+                        <div class="list-item">
+                            <div class="item-header">
+                                <div class="item-time">${item.measure_time}</div>
+                                <button class="delete-btn" onclick="deleteItem('blood', ${item.id})">删除</button>
+                            </div>
+                            <div class="item-values">
+                                <div class="value-item">
+                                    <div class="value-label">收缩压</div>
+                                    <div class="value-number">${item.systolic}</div>
+                                </div>
+                                <div class="value-item">
+                                    <div class="value-label">舒张压</div>
+                                    <div class="value-number">${item.diastolic}</div>
+                                </div>
+                                ${item.heart_rate ? `
+                                    <div class="value-item">
+                                        <div class="value-label">心率</div>
+                                        <div class="value-number">${item.heart_rate}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            ${item.remark ? `<div class="item-remark">💬 ${item.remark}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="list-item">
+                            <div class="item-header">
+                                <div class="item-time">${item.measure_time}</div>
+                                <button class="delete-btn" onclick="deleteItem('uric', ${item.id})">删除</button>
+                            </div>
+                            <div class="item-values">
+                                <div class="value-item">
+                                    <div class="value-label">血尿酸</div>
+                                    <div class="value-number">${item.value}</div>
+                                </div>
+                            </div>
+                            ${item.remark ? `<div class="item-remark">💬 ${item.remark}</div>` : ''}
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+        
+        async function deleteItem(type, id) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            
+            const url = type === 'blood' 
+                ? `/api/blood-pressure/${id}` 
+                : `/api/uric-acid/${id}`;
+            
+            await fetch(url, { method: 'DELETE' });
+            loadHistory();
+            loadCharts();
+        }
+        
+        function filterByTimePeriod(data, period) {
+            if (period === 'all') return data;
+            
+            return data.filter(item => {
+                const hour = new Date(item.measure_time).getHours();
+                switch(period) {
+                    case 'morning': return hour >= 6 && hour < 12;
+                    case 'afternoon': return hour >= 12 && hour < 18;
+                    case 'evening': return hour >= 18 && hour < 24;
+                    default: return true;
+                }
+            });
+        }
+        
+        async function loadCharts() {
+            const range = getDateRange(currentChartFilter);
+            if (!range) return;
+            
+            if (currentChartType === 'blood') {
+                const res = await fetch(`/api/blood-pressure?start_date=${range.startDate}&end_date=${range.endDate}`);
+                let data = await res.json();
+                data = filterByTimePeriod(data, currentTimePeriod);
+                renderBloodChart(data.reverse());
+            } else {
+                const res = await fetch(`/api/uric-acid?start_date=${range.startDate}&end_date=${range.endDate}`);
+                let data = await res.json();
+                data = filterByTimePeriod(data, currentTimePeriod);
+                renderUricChart(data.reverse());
+            }
+        }
+        
+        function renderBloodChart(data) {
+            if (!bloodChart) {
+                bloodChart = echarts.init(document.getElementById('blood-chart'));
+                window.addEventListener('resize', () => bloodChart.resize());
+            }
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let result = params[0].name + '<br/>';
+                        params.forEach(param => {
+                            result += `${param.marker}${param.seriesName}: ${param.value}<br/>`;
+                        });
+                        const item = data[params[0].dataIndex];
+                        if (item.remark) {
+                            result += `💬 备注: ${item.remark}`;
+                        }
+                        return result;
+                    }
+                },
+                legend: { data: ['收缩压', '舒张压', '心率'] },
+                grid: { left: '10%', right: '8%', bottom: '15%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    axisLabel: {
+                        formatter: function(value) {
+                            return value.replace('-', '/').replace('T', ' ').substr(0, 10);
+                        }
+                    },
+                    data: data.map(d => d.measure_time)
+                },
+                yAxis: [
+                    {
+                        type: 'value', 
+                        name: '血压 (mmHg)',
+                        axisLabel: {
+                            formatter: '{value} mmHg'
+                        },
+                        min: 60,
+                        max: 180,
+                        interval: 30
+                    },
+                    {
+                        type: 'value', 
+                        name: '心率 (次/分)',
+                        axisLabel: {
+                            formatter: '{value} 次/分'
+                        },
+                        min: 40,
+                        max: 120,
+                        interval: 20
+                    }
+                ],
+                series: [
+                    {
+                        name: '收缩压',
+                        type: 'line',
+                        smooth: true,
+                        data: data.map(d => d.systolic),
+                        itemStyle: { color: '#ff6b6b' },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    },
+                    {
+                        name: '舒张压',
+                        type: 'line',
+                        smooth: true,
+                        data: data.map(d => d.diastolic),
+                        itemStyle: { color: '#4ecdc4' },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    },
+                    {
+                        name: '心率',
+                        type: 'line',
+                        smooth: true,
+                        yAxisIndex: 1,
+                        data: data.map(d => d.heart_rate),
+                        itemStyle: { color: '#ffe66d' },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }
+                ]
+            };
+            
+            bloodChart.setOption(option);
+        }
+        
+        function renderUricChart(data) {
+            if (!uricChart) {
+                uricChart = echarts.init(document.getElementById('uric-chart'));
+                window.addEventListener('resize', () => uricChart.resize());
+            }
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let result = params[0].name + '<br/>';
+                        params.forEach(param => {
+                            result += `${param.marker}${param.seriesName}: ${param.value} μmol/L<br/>`;
+                        });
+                        const item = data[params[0].dataIndex];
+                        if (item.remark) {
+                            result += `💬 备注: ${item.remark}`;
+                        }
+                        return result;
+                    }
+                },
+                legend: { data: ['血尿酸'] },
+                grid: { left: '10%', right: '8%', bottom: '15%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    axisLabel: {
+                        formatter: function(value) {
+                            return value.replace('-', '/').replace('T', ' ').substr(0, 10);
+                        }
+                    },
+                    data: data.map(d => d.measure_time)
+                },
+                yAxis: { 
+                    type: 'value', 
+                    name: '血尿酸 (μmol/L)',
+                    axisLabel: {
+                        formatter: '{value} μmol/L'
+                    },
+                    min: 100,
+                    max: 600,
+                    interval: 100,
+                    markLine: {
+                        data: [
+                            { yAxis: 420, name: '正常上限' }
+                        ]
+                    }
+                },
+                series: [
+                    {
+                        name: '血尿酸',
+                        type: 'line',
+                        smooth: true,
+                        data: data.map(d => d.value),
+                        itemStyle: { color: '#667eea' },
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        markLine: {
+                            data: [
+                                { yAxis: 420, name: '正常上限', lineStyle: { color: '#ff6b6b', type: 'dashed' } }
+                            ]
+                        }
+                    }
+                ]
+            };
+            
+            uricChart.setOption(option);
+        }
+        
+        document.getElementById('blood-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                systolic: parseInt(formData.get('systolic')),
+                diastolic: parseInt(formData.get('diastolic')),
+                heart_rate: formData.get('heart_rate') ? parseInt(formData.get('heart_rate')) : null,
+                measure_time: formData.get('measure_time'),
+                remark: formData.get('remark') || null
+            };
+            
+            await fetch('/api/blood-pressure', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            e.target.reset();
+            alert('数据提交成功！');
+            showInputType('blood');
+        });
+        
+        document.getElementById('uric-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                value: parseFloat(formData.get('value')),
+                measure_time: formData.get('measure_time'),
+                remark: formData.get('remark') || null
+            };
+            
+            await fetch('/api/uric-acid', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            e.target.reset();
+            alert('数据提交成功！');
+            showInputType('uric');
+        });
+        
+        async function loadDataStats() {
+            const bloodRes = await fetch('/api/blood-pressure');
+            const bloodData = await bloodRes.json();
+            
+            const uricRes = await fetch('/api/uric-acid');
+            const uricData = await uricRes.json();
+            
+            const stats = document.getElementById('data-stats');
+            stats.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 10px;">
+                    <div style="text-align: center; padding: 16px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                        <div style="font-size: 14px; color: #666; margin-bottom: 8px;">血压记录</div>
+                        <div style="font-size: 24px; font-weight: 600; color: #667eea;">${bloodData.length}</div>
+                    </div>
+                    <div style="text-align: center; padding: 16px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                        <div style="font-size: 14px; color: #666; margin-bottom: 8px;">血尿酸记录</div>
+                        <div style="font-size: 24px; font-weight: 600; color: #667eea;">${uricData.length}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                current_password: formData.get('current_password'),
+                new_password: formData.get('new_password'),
+                confirm_password: formData.get('confirm_password')
+            };
+            
+            if (data.new_password !== data.confirm_password) {
+                alert('两次输入的新密码不一致！');
+                return;
+            }
+            
+            const res = await fetch('/api/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await res.json();
+            if (result.success) {
+                alert('密码修改成功！');
+                e.target.reset();
+            } else {
+                alert(result.error || '密码修改失败');
+            }
+        });
+        
+        document.getElementById('start-date').addEventListener('change', loadHistory);
+        document.getElementById('end-date').addEventListener('change', loadHistory);
+        
+        showInputType('blood');
+    </script>
+</body>
+</html>
