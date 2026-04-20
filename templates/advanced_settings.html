@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级设置</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 20px;
+        }
+        
+        .logout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .content {
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .user-list {
+            margin-top: 16px;
+        }
+        
+        .user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .user-info {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .user-created {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .edit-btn {
+            background: #4ecdc4;
+            color: white;
+        }
+        
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+        }
+        
+        .add-user-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-actions button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .modal-actions .cancel-btn {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .modal-actions .confirm-btn {
+            background: #667eea;
+            color: white;
+        }
+        
+        .backup-section {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .backup-btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .backup-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .backup-info {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚙️ 高级设置</h1>
+        <div style="display: flex; gap: 10px;">
+            <button class="logout-btn" onclick="location.href='/'">返回主页</button>
+            <button class="logout-btn" onclick="location.href='/api/advanced/logout'">退出</button>
+        </div>
+    </div>
+    
+    <div class="content">
+        <div class="card">
+            <div class="card-title">👥 系统用户管理</div>
+            <button class="add-user-btn" onclick="showAddUserModal()">➕ 添加用户</button>
+            <div id="user-list" class="user-list"></div>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">🔒 高级设置密码修改</div>
+            <form id="password-form">
+                <div class="form-group">
+                    <label>新密码</label>
+                    <input type="password" name="advanced_password" required placeholder="请输入新的高级设置密码">
+                </div>
+                <button type="submit" class="submit-btn">修改密码</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <div class="card-title">💾 系统数据备份</div>
+            <div class="backup-section">
+                <a href="/api/advanced/backup" class="backup-btn">📤 下载系统数据库备份</a>
+                <p class="backup-info">备份文件：health_system.db（包含用户信息和系统设置）</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加/编辑用户模态框 -->
+    <div id="user-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">添加用户</h3>
+                <button class="close-btn" onclick="hideUserModal()">×</button>
+            </div>
+            <form id="user-form">
+                <input type="hidden" name="user_id">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" name="username" required placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" name="password" required placeholder="请输入密码">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-btn" onclick="hideUserModal()">取消</button>
+                    <button type="submit" class="confirm-btn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let users = [];
+        
+        async function loadUsers() {
+            const res = await fetch('/api/advanced/users');
+            users = await res.json();
+            renderUsers();
+        }
+        
+        function renderUsers() {
+            const container = document.getElementById('user-list');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #999;">暂无用户</p>';
+                return;
+            }
+            
+            container.innerHTML = users.map(user => `
+                <div class="user-item">
+                    <div class="user-info">
+                        <div class="user-name">${user.username}</div>
+                        <div class="user-created">创建于: ${user.created_at}</div>
+                    </div>
+                    <div class="user-actions">
+                        <button class="action-btn edit-btn" onclick="showEditUserModal(${user.id}, '${user.username}')">修改密码</button>
+                        <button class="action-btn delete-btn" onclick="deleteUser(${user.id})">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function showAddUserModal() {
+            document.getElementById('modal-title').textContent = '添加用户';
+            document.getElementById('user-form').reset();
+            document.querySelector('input[name="user_id"]').value = '';
+            document.getElementById('user-modal').style.display = 'flex';
+        }
+        
+        function showEditUserModal(id, username) {
+            document.getElementById('modal-title').textContent = '修改密码';
+            document.getElementById('user-form').reset();
+            document.querySelector('input[name="user_id"]').value = id;
+            document.querySelector('input[name="username"]').value = username;
+            document.querySelector('input[name="username"]').disabled = true;
+            document.getElementById('user-modal').style.display = 'flex';
+        }
+        
+        function hideUserModal() {
+            document.getElementById('user-modal').style.display = 'none';
+            document.querySelector('input[name="username"]').disabled = false;
+        }
+        
+        async function deleteUser(id) {
+            if (!confirm('确定要删除这个用户吗？')) return;
+            
+            const res = await fetch(`/api/advanced/users/${id}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                loadUsers();
+            }
+        }
+        
+        // 处理用户表单提交
+        document.getElementById('user-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const user_id = formData.get('user_id');
+            const username = formData.get('username');
+            const password = formData.get('password');
+            
+            let res;
+            if (user_id) {
+                // 修改用户
+                res = await fetch(`/api/advanced/users/${user_id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+            } else {
+                // 添加用户
+                res = await fetch('/api/advanced/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+            }
+            
+            const data = await res.json();
+            if (data.success) {
+                hideUserModal();
+                loadUsers();
+            } else {
+                alert(data.error || '操作失败');
+            }
+        });
+        
+        // 处理密码修改表单提交
+        document.getElementById('password-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const advanced_password = formData.get('advanced_password');
+            
+            const res = await fetch('/api/advanced/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ advanced_password })
+            });
+            
+            const data = await res.json();
+            if (data.success) {
+                alert('密码修改成功');
+                this.reset();
+            } else {
+                alert(data.error || '操作失败');
+            }
+        });
+        
+        // 页面加载时加载用户列表
+        window.onload = loadUsers;
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>健康数据管理</title>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -16,6 +17,52 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #f5f7fa;
             color: #333;
+        }
+        
+        /* 自定义弹窗样式 */
+        .custom-alert {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+        
+        .alert-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .alert-message {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .alert-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .alert-button:hover {
+            transform: translateY(-2px);
         }
         
         .header {
@@ -165,13 +212,40 @@
         }
         
         .form-group input,
-        .form-group textarea {
+        .form-group textarea,
+        .form-group select {
             width: 100%;
             padding: 10px 12px;
             border: 2px solid #e0e0e0;
             border-radius: 6px;
             font-size: 14px;
             transition: border-color 0.3s;
+        }
+        
+        .form-group select {
+            min-width: 200px;
+        }
+        
+        .time-input-container {
+            position: relative;
+        }
+        
+        .time-input-container input {
+            padding-right: 40px;
+        }
+        
+        .time-button {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 12px;
+            cursor: pointer;
         }
         
         .form-group input:focus,
@@ -369,7 +443,10 @@
                         </div>
                         <div class="form-group">
                             <label>测量时间</label>
-                            <input type="datetime-local" name="measure_time" required>
+                            <div class="time-input-container">
+                                <input type="datetime-local" name="measure_time" required>
+                                <button type="button" class="time-button" onclick="setCurrentTime(this)">当前时间</button>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -392,7 +469,10 @@
                         </div>
                         <div class="form-group">
                             <label>测量时间</label>
-                            <input type="datetime-local" name="measure_time" required>
+                            <div class="time-input-container">
+                                <input type="datetime-local" name="measure_time" required>
+                                <button type="button" class="time-button" onclick="setCurrentTime(this)">当前时间</button>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -415,7 +495,10 @@
                         </div>
                         <div class="form-group">
                             <label>测量时间</label>
-                            <input type="datetime-local" name="measure_time" required>
+                            <div class="time-input-container">
+                                <input type="datetime-local" name="measure_time" required>
+                                <button type="button" class="time-button" onclick="setCurrentTime(this)">当前时间</button>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group">
@@ -460,6 +543,7 @@
                     <button class="filter-btn" onclick="filterHistory('7days')">近7天</button>
                     <button class="filter-btn" onclick="filterHistory('30days')">近30天</button>
                     <button class="filter-btn" onclick="filterHistory('custom')">自定义</button>
+                    <button class="filter-btn" onclick="exportToExcel()">导出Excel</button>
                 </div>
                 
                 <div class="date-range" id="date-range" style="display: none;">
@@ -697,7 +781,9 @@
         
         function getDateRange(filter) {
             const now = new Date();
-            const today = now.toISOString().slice(0, 10);
+            // 转换为北京时间（UTC+8）
+            const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+            const today = beijingTime.toISOString().slice(0, 10);
             let startDate, endDate;
             
             switch(filter) {
@@ -705,13 +791,15 @@
                     startDate = endDate = today;
                     break;
                 case '7days':
-                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                    const sevenDaysAgo = new Date(beijingTime.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    startDate = sevenDaysAgo.toISOString().slice(0, 10);
                     endDate = today;
                     break;
                 case '30days':
                 case '90days':
                     const days = filter === '30days' ? 30 : 90;
-                    startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+                    const daysAgo = new Date(beijingTime.getTime() - days * 24 * 60 * 60 * 1000);
+                    startDate = daysAgo.toISOString().slice(0, 10);
                     endDate = today;
                     break;
                 case 'custom':
@@ -767,7 +855,7 @@
                     return `
                         <div class="list-item">
                             <div class="item-header">
-                                <div class="item-time">${item.measure_time}</div>
+                                <div class="item-time">${formatLocalTime(item.measure_time)}</div>
                                 <div class="item-user" style="margin-right: 16px; color: #666; font-size: 13px;">${getUserName(item.user_id)}</div>
                                 <button class="delete-btn" onclick="deleteItem('blood', ${item.id})">删除</button>
                             </div>
@@ -794,7 +882,7 @@
                     return `
                         <div class="list-item">
                             <div class="item-header">
-                                <div class="item-time">${item.measure_time}</div>
+                                <div class="item-time">${formatLocalTime(item.measure_time)}</div>
                                 <div class="item-user" style="margin-right: 16px; color: #666; font-size: 13px;">${getUserName(item.user_id)}</div>
                                 <button class="delete-btn" onclick="deleteItem('uric', ${item.id})">删除</button>
                             </div>
@@ -811,7 +899,7 @@
                     return `
                         <div class="list-item">
                             <div class="item-header">
-                                <div class="item-time">${item.measure_time}</div>
+                                <div class="item-time">${formatLocalTime(item.measure_time)}</div>
                                 <div class="item-user" style="margin-right: 16px; color: #666; font-size: 13px;">${getUserName(item.user_id)}</div>
                                 <button class="delete-btn" onclick="deleteItem('sugar', ${item.id})">删除</button>
                             </div>
@@ -1144,14 +1232,152 @@
             return localStorage.getItem(key);
         }
         
+        // 自定义弹窗函数
+        function showAlert(message) {
+            const alertElement = document.createElement('div');
+            alertElement.className = 'custom-alert';
+            alertElement.innerHTML = `
+                <div class="alert-content">
+                    <div class="alert-message">${message}</div>
+                    <button class="alert-button" onclick="this.closest('.custom-alert').remove()">OK</button>
+                </div>
+            `;
+            document.body.appendChild(alertElement);
+        }
+        
+        // 设置当前时间到输入框（北京时间UTC+8）
+        function setCurrentTime(button) {
+            const input = button.previousElementSibling;
+            const now = new Date();
+            
+            // 转换为北京时间（UTC+8）
+            const beijingTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+            
+            const year = beijingTime.getUTCFullYear();
+            const month = String(beijingTime.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(beijingTime.getUTCDate()).padStart(2, '0');
+            const hours = String(beijingTime.getUTCHours()).padStart(2, '0');
+            const minutes = String(beijingTime.getUTCMinutes()).padStart(2, '0');
+            
+            // 构建北京时间的ISO格式字符串
+            const datetime = `${year}-${month}-${day}T${hours}:${minutes}`;
+            input.value = datetime;
+        }
+        
+        // 格式化时间为当地时间
+        function formatLocalTime(isoTime) {
+            const date = new Date(isoTime);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // 导出到Excel
+        async function exportToExcel() {
+            const range = getDateRange(currentHistoryFilter);
+            if (!range && currentHistoryFilter === 'custom') {
+                showAlert('请选择日期范围');
+                return;
+            }
+            
+            const url = currentHistoryType === 'blood' 
+                ? '/api/blood-pressure' 
+                : currentHistoryType === 'uric' 
+                ? '/api/uric-acid' 
+                : '/api/blood-sugar';
+            
+            const params = new URLSearchParams();
+            const user_id = document.getElementById('history-user-select').value;
+            if (user_id) {
+                params.append('user_id', user_id);
+            }
+            if (range) {
+                params.append('start_date', range.startDate);
+                params.append('end_date', range.endDate);
+            }
+            
+            const res = await fetch(url + '?' + params.toString());
+            const data = await res.json();
+            
+            if (data.length === 0) {
+                showAlert('没有数据可导出');
+                return;
+            }
+            
+            // 转换数据格式
+            let headers, rows;
+            if (currentHistoryType === 'blood') {
+                headers = ['测量时间', '归属人', '收缩压', '舒张压', '心率', '备注'];
+                rows = data.map(item => [
+                    item.measure_time,
+                    getUserName(item.user_id),
+                    item.systolic,
+                    item.diastolic,
+                    item.heart_rate || '',
+                    item.remark || ''
+                ]);
+            } else if (currentHistoryType === 'uric') {
+                headers = ['测量时间', '归属人', '血尿酸值', '备注'];
+                rows = data.map(item => [
+                    item.measure_time,
+                    getUserName(item.user_id),
+                    item.value,
+                    item.remark || ''
+                ]);
+            } else {
+                headers = ['测量时间', '归属人', '血糖值', '状态', '备注'];
+                rows = data.map(item => [
+                    item.measure_time,
+                    getUserName(item.user_id),
+                    item.value,
+                    item.fasting ? '空腹' : '餐后',
+                    item.remark || ''
+                ]);
+            }
+            
+            // 创建工作簿
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+            XLSX.utils.book_append_sheet(workbook, worksheet, '数据');
+            
+            // 下载文件
+            const fileName = `${currentHistoryType === 'blood' ? '血压' : currentHistoryType === 'uric' ? '血尿酸' : '血糖'}记录_${range ? range.startDate : '全部'}_${range ? range.endDate : ''}.xlsx`;
+            XLSX.writeFile(workbook, fileName);
+        }
+        
         document.getElementById('blood-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
+            
+            // 验证输入
+            const systolic = parseInt(formData.get('systolic'));
+            const diastolic = parseInt(formData.get('diastolic'));
+            const heart_rate = formData.get('heart_rate') ? parseInt(formData.get('heart_rate')) : null;
+            
+            if (isNaN(systolic) || systolic < 40 || systolic > 200) {
+                showAlert('收缩压应在40-200之间');
+                return;
+            }
+            
+            if (isNaN(diastolic) || diastolic < 40 || diastolic > 120) {
+                showAlert('舒张压应在40-120之间');
+                return;
+            }
+            
+            if (heart_rate && (heart_rate < 30 || heart_rate > 200)) {
+                showAlert('心率应在30-200之间');
+                return;
+            }
+            
             const data = {
                 user_id: parseInt(formData.get('user_id')),
-                systolic: parseInt(formData.get('systolic')),
-                diastolic: parseInt(formData.get('diastolic')),
-                heart_rate: formData.get('heart_rate') ? parseInt(formData.get('heart_rate')) : null,
+                systolic: systolic,
+                diastolic: diastolic,
+                heart_rate: heart_rate,
                 measure_time: formData.get('measure_time'),
                 remark: formData.get('remark') || null
             };
@@ -1167,16 +1393,25 @@
             // 保存选中的用户ID
             saveSelectedUserId('last_user_id', data.user_id.toString());
             
-            alert('数据提交成功！');
+            showAlert('数据提交成功');
             showInputType('blood');
         });
         
         document.getElementById('uric-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
+            
+            // 验证输入
+            const value = parseFloat(formData.get('value'));
+            
+            if (isNaN(value) || value < 100 || value > 800) {
+                showAlert('血尿酸值应在100-800 μmol/L之间');
+                return;
+            }
+            
             const data = {
                 user_id: parseInt(formData.get('user_id')),
-                value: parseFloat(formData.get('value')),
+                value: value,
                 measure_time: formData.get('measure_time'),
                 remark: formData.get('remark') || null
             };
@@ -1192,16 +1427,25 @@
             // 保存选中的用户ID
             saveSelectedUserId('last_user_id', data.user_id.toString());
             
-            alert('数据提交成功！');
+            showAlert('数据提交成功');
             showInputType('uric');
         });
         
         document.getElementById('sugar-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
+            
+            // 验证输入
+            const value = parseFloat(formData.get('value'));
+            
+            if (isNaN(value) || value < 1 || value > 30) {
+                showAlert('血糖值应在1-30 mmol/L之间');
+                return;
+            }
+            
             const data = {
                 user_id: parseInt(formData.get('user_id')),
-                value: parseFloat(formData.get('value')),
+                value: value,
                 fasting: parseInt(formData.get('fasting')),
                 measure_time: formData.get('measure_time'),
                 remark: formData.get('remark') || null
@@ -1218,7 +1462,7 @@
             // 保存选中的用户ID
             saveSelectedUserId('last_user_id', data.user_id.toString());
             
-            alert('数据提交成功！');
+            showAlert('数据提交成功');
             showInputType('sugar');
         });
         
@@ -1228,10 +1472,12 @@
         }
         
         function loadUserSelects() {
-            const userSelects = [
+            const inputSelects = [
                 document.getElementById('blood-user-select'),
                 document.getElementById('uric-user-select'),
-                document.getElementById('sugar-user-select'),
+                document.getElementById('sugar-user-select')
+            ];
+            const filterSelects = [
                 document.getElementById('history-user-select'),
                 document.getElementById('chart-user-select')
             ];
@@ -1239,7 +1485,18 @@
             // 加载上一次选中的用户ID
             const lastUserId = loadSelectedUserId('last_user_id');
             
-            userSelects.forEach(select => {
+            // 数据录入页面的下拉框 - 不添加"全部成员"，默认选择第一个用户或上次选择的用户
+            inputSelects.forEach(select => {
+                if (select) {
+                    let options = users.map(user => 
+                        `<option value="${user.id}" ${lastUserId === user.id.toString() || (!lastUserId && users.indexOf(user) === 0) ? 'selected' : ''}>${user.name}</option>`
+                    ).join('');
+                    select.innerHTML = options;
+                }
+            });
+            
+            // 历史记录和图表页面的下拉框 - 添加"全部成员"选项
+            filterSelects.forEach(select => {
                 if (select) {
                     select.innerHTML = `<option value="">全部成员</option>` + users.map(user => 
                         `<option value="${user.id}" ${lastUserId === user.id.toString() ? 'selected' : ''}>${user.name}</option>`
@@ -1287,11 +1544,11 @@
             const result = await res.json();
             
             if (result.success) {
-                alert('用户删除成功！');
+                showAlert('用户删除成功');
                 await loadUsers();
                 loadUserList();
             } else {
-                alert(result.error || '用户删除失败');
+                showAlert(result.error || '用户删除失败');
             }
         }
         
@@ -1371,13 +1628,13 @@
             
             const result = await res.json();
             if (result.success) {
-                alert('用户保存成功！');
+                showAlert('用户保存成功');
                 hideAddUserForm();
                 await loadUsers();
                 loadUserList();
                 loadUserSelects();
             } else {
-                alert('用户保存失败');
+                showAlert('用户保存失败');
             }
         });
         
@@ -1391,7 +1648,7 @@
             };
             
             if (data.new_password !== data.confirm_password) {
-                alert('两次输入的新密码不一致！');
+                showAlert('两次输入的新密码不一致！');
                 return;
             }
             
@@ -1403,10 +1660,10 @@
             
             const result = await res.json();
             if (result.success) {
-                alert('密码修改成功！');
+                showAlert('密码修改成功');
                 e.target.reset();
             } else {
-                alert(result.error || '密码修改失败');
+                showAlert(result.error || '密码修改失败');
             }
         });
         
