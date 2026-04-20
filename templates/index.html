@@ -343,10 +343,15 @@
                 <div class="type-tabs">
                     <button class="type-tab active" onclick="showInputType('blood')">血压</button>
                     <button class="type-tab" onclick="showInputType('uric')">血尿酸</button>
+                    <button class="type-tab" onclick="showInputType('sugar')">血糖</button>
                 </div>
                 
                 <form id="blood-form">
                     <div class="card-title">📊 录入血压数据</div>
+                    <div class="form-group">
+                        <label>归属人</label>
+                        <select name="user_id" required id="blood-user-select"></select>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>收缩压 (mmHg)</label>
@@ -376,6 +381,10 @@
                 
                 <form id="uric-form" style="display: none;">
                     <div class="card-title">🧪 录入血尿酸数据</div>
+                    <div class="form-group">
+                        <label>归属人</label>
+                        <select name="user_id" required id="uric-user-select"></select>
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>血尿酸值 (μmol/L)</label>
@@ -392,6 +401,42 @@
                     </div>
                     <button type="submit" class="submit-btn">提交数据</button>
                 </form>
+                
+                <form id="sugar-form" style="display: none;">
+                    <div class="card-title">🍬 录入血糖数据</div>
+                    <div class="form-group">
+                        <label>归属人</label>
+                        <select name="user_id" required id="sugar-user-select"></select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>血糖值 (mmol/L)</label>
+                            <input type="number" step="0.1" name="value" required placeholder="如: 5.6">
+                        </div>
+                        <div class="form-group">
+                            <label>测量时间</label>
+                            <input type="datetime-local" name="measure_time" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>状态</label>
+                        <div style="display: flex; gap: 16px;">
+                            <label style="display: flex; align-items: center; gap: 6px;">
+                                <input type="radio" name="fasting" value="1" checked>
+                                <span>空腹</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 6px;">
+                                <input type="radio" name="fasting" value="0">
+                                <span>餐后</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <textarea name="remark" rows="2" placeholder="可选，如: 早餐后2小时"></textarea>
+                    </div>
+                    <button type="submit" class="submit-btn">提交数据</button>
+                </form>
             </div>
         </div>
         
@@ -400,6 +445,14 @@
                 <div class="type-tabs">
                     <button class="type-tab active" onclick="showHistoryType('blood')">血压记录</button>
                     <button class="type-tab" onclick="showHistoryType('uric')">血尿酸记录</button>
+                    <button class="type-tab" onclick="showHistoryType('sugar')">血糖记录</button>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>归属人</label>
+                    <select id="history-user-select" onchange="loadHistory()">
+                        <option value="">全部成员</option>
+                    </select>
                 </div>
                 
                 <div class="filter-bar">
@@ -427,6 +480,14 @@
                 <div class="type-tabs">
                     <button class="type-tab active" onclick="showChartType('blood')">血压趋势</button>
                     <button class="type-tab" onclick="showChartType('uric')">血尿酸趋势</button>
+                    <button class="type-tab" onclick="showChartType('sugar')">血糖趋势</button>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>归属人</label>
+                    <select id="chart-user-select" onchange="loadCharts()">
+                        <option value="">全部成员</option>
+                    </select>
                 </div>
                 
                 <div class="filter-bar">
@@ -443,10 +504,35 @@
                 
                 <div id="blood-chart" class="chart-container"></div>
                 <div id="uric-chart" class="chart-container" style="display: none;"></div>
+                <div id="sugar-chart" class="chart-container" style="display: none;"></div>
             </div>
         </div>
         
         <div id="page-settings" class="page">
+            <div class="card">
+                <div class="card-title">👥 用户管理</div>
+                <div style="margin-bottom: 16px;">
+                    <button class="submit-btn" style="width: auto; float: right; margin-bottom: 16px;" onclick="showAddUserForm()">➕ 添加用户</button>
+                    <div style="clear: both;"></div>
+                </div>
+                <div id="user-list"></div>
+            </div>
+            
+            <div class="card" id="user-form-card" style="display: none;">
+                <div class="card-title">📝 用户信息</div>
+                <form id="user-form">
+                    <input type="hidden" name="user_id">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" name="name" required placeholder="请输入用户姓名">
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 16px;">
+                        <button type="submit" class="submit-btn">保存</button>
+                        <button type="button" class="submit-btn" style="background: #999;" onclick="hideAddUserForm()">取消</button>
+                    </div>
+                </form>
+            </div>
+            
             <div class="card">
                 <div class="card-title">🔒 密码修改</div>
                 <form id="password-form">
@@ -489,9 +575,10 @@
         let currentHistoryFilter = 'today';
         let currentChartFilter = '7days';
         let currentTimePeriod = 'all';
-        let bloodChart, uricChart;
+        let bloodChart, uricChart, sugarChart;
+        let users = [];
         
-        function showPage(page) {
+        async function showPage(page) {
             currentPage = page;
             document.querySelectorAll('.nav-tab').forEach((tab, i) => {
                 tab.classList.toggle('active', ['input', 'history', 'chart', 'settings'][i] === page);
@@ -499,30 +586,75 @@
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById('page-' + page).classList.add('active');
             
+            // 加载用户数据
+            await loadUsers();
+            
+            // 加载用户选择下拉菜单，默认选择最近使用的归属人
+            loadUserSelects();
+            
+            if (page === 'input') {
+                // 确保当前输入类型的表单加载最近使用的数据
+                const activeTab = document.querySelector('#page-input .type-tab.active');
+                if (activeTab) {
+                    const type = activeTab.textContent.trim() === '血压' ? 'blood' : activeTab.textContent.trim() === '血尿酸' ? 'uric' : 'sugar';
+                    showInputType(type);
+                } else {
+                    showInputType('blood');
+                }
+            }
             if (page === 'history') loadHistory();
             if (page === 'chart') loadCharts();
-            if (page === 'settings') loadDataStats();
+            if (page === 'settings') {
+                loadDataStats();
+                loadUserList();
+            }
         }
         
         function showInputType(type) {
             document.querySelectorAll('#page-input .type-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压' : '血尿酸'));
+                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压' : type === 'uric' ? '血尿酸' : '血糖'));
             });
             document.getElementById('blood-form').style.display = type === 'blood' ? 'block' : 'none';
             document.getElementById('uric-form').style.display = type === 'uric' ? 'block' : 'none';
+            document.getElementById('sugar-form').style.display = type === 'sugar' ? 'block' : 'none';
             
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            const datetime = now.toISOString().slice(0, 16);
-            document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
-                if (!input.value) input.value = datetime;
-            });
+            // 加载上一次保存的表单数据
+            const formData = loadFormData(type);
+            if (formData) {
+                if (type === 'blood') {
+                    document.querySelector('#blood-form input[name="systolic"]').value = formData.systolic || '';
+                    document.querySelector('#blood-form input[name="diastolic"]').value = formData.diastolic || '';
+                    document.querySelector('#blood-form input[name="heart_rate"]').value = formData.heart_rate || '';
+                    document.querySelector('#blood-form input[name="measure_time"]').value = formData.measure_time || '';
+                    document.querySelector('#blood-form textarea[name="remark"]').value = formData.remark || '';
+                    document.querySelector('#blood-form select[name="user_id"]').value = formData.user_id || '';
+                } else if (type === 'uric') {
+                    document.querySelector('#uric-form input[name="value"]').value = formData.value || '';
+                    document.querySelector('#uric-form input[name="measure_time"]').value = formData.measure_time || '';
+                    document.querySelector('#uric-form textarea[name="remark"]').value = formData.remark || '';
+                    document.querySelector('#uric-form select[name="user_id"]').value = formData.user_id || '';
+                } else if (type === 'sugar') {
+                    document.querySelector('#sugar-form input[name="value"]').value = formData.value || '';
+                    document.querySelector('#sugar-form input[name="measure_time"]').value = formData.measure_time || '';
+                    document.querySelector('#sugar-form textarea[name="remark"]').value = formData.remark || '';
+                    document.querySelector('#sugar-form select[name="user_id"]').value = formData.user_id || '';
+                    document.querySelector(`#sugar-form input[name="fasting"][value="${formData.fasting}"]`).checked = true;
+                }
+            } else {
+                // 如果没有保存的表单数据，设置当前时间
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                const datetime = now.toISOString().slice(0, 16);
+                document.querySelectorAll('input[type="datetime-local"]').forEach(input => {
+                    if (!input.value) input.value = datetime;
+                });
+            }
         }
         
         function showHistoryType(type) {
             currentHistoryType = type;
             document.querySelectorAll('#page-history .type-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压记录' : '血尿酸记录'));
+                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压记录' : type === 'uric' ? '血尿酸记录' : '血糖记录'));
             });
             loadHistory();
         }
@@ -530,10 +662,11 @@
         function showChartType(type) {
             currentChartType = type;
             document.querySelectorAll('#page-chart .type-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压趋势' : '血尿酸趋势'));
+                tab.classList.toggle('active', tab.textContent.trim() === (type === 'blood' ? '血压趋势' : type === 'uric' ? '血尿酸趋势' : '血糖趋势'));
             });
             document.getElementById('blood-chart').style.display = type === 'blood' ? 'block' : 'none';
             document.getElementById('uric-chart').style.display = type === 'uric' ? 'block' : 'none';
+            document.getElementById('sugar-chart').style.display = type === 'sugar' ? 'block' : 'none';
             loadCharts();
         }
         
@@ -596,9 +729,15 @@
             
             const url = currentHistoryType === 'blood' 
                 ? '/api/blood-pressure' 
-                : '/api/uric-acid';
+                : currentHistoryType === 'uric' 
+                ? '/api/uric-acid' 
+                : '/api/blood-sugar';
             
             const params = new URLSearchParams();
+            const user_id = document.getElementById('history-user-select').value;
+            if (user_id) {
+                params.append('user_id', user_id);
+            }
             if (range) {
                 params.append('start_date', range.startDate);
                 params.append('end_date', range.endDate);
@@ -629,6 +768,7 @@
                         <div class="list-item">
                             <div class="item-header">
                                 <div class="item-time">${item.measure_time}</div>
+                                <div class="item-user" style="margin-right: 16px; color: #666; font-size: 13px;">${getUserName(item.user_id)}</div>
                                 <button class="delete-btn" onclick="deleteItem('blood', ${item.id})">删除</button>
                             </div>
                             <div class="item-values">
@@ -650,17 +790,39 @@
                             ${item.remark ? `<div class="item-remark">💬 ${item.remark}</div>` : ''}
                         </div>
                     `;
-                } else {
+                } else if (currentHistoryType === 'uric') {
                     return `
                         <div class="list-item">
                             <div class="item-header">
                                 <div class="item-time">${item.measure_time}</div>
+                                <div class="item-user" style="margin-right: 16px; color: #666; font-size: 13px;">${getUserName(item.user_id)}</div>
                                 <button class="delete-btn" onclick="deleteItem('uric', ${item.id})">删除</button>
                             </div>
                             <div class="item-values">
                                 <div class="value-item">
                                     <div class="value-label">血尿酸</div>
                                     <div class="value-number">${item.value}</div>
+                                </div>
+                            </div>
+                            ${item.remark ? `<div class="item-remark">💬 ${item.remark}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="list-item">
+                            <div class="item-header">
+                                <div class="item-time">${item.measure_time}</div>
+                                <div class="item-user" style="margin-right: 16px; color: #666; font-size: 13px;">${getUserName(item.user_id)}</div>
+                                <button class="delete-btn" onclick="deleteItem('sugar', ${item.id})">删除</button>
+                            </div>
+                            <div class="item-values">
+                                <div class="value-item">
+                                    <div class="value-label">血糖</div>
+                                    <div class="value-number">${item.value}</div>
+                                </div>
+                                <div class="value-item">
+                                    <div class="value-label">状态</div>
+                                    <div class="value-number">${item.fasting ? '空腹' : '餐后'}</div>
                                 </div>
                             </div>
                             ${item.remark ? `<div class="item-remark">💬 ${item.remark}</div>` : ''}
@@ -675,7 +837,9 @@
             
             const url = type === 'blood' 
                 ? `/api/blood-pressure/${id}` 
-                : `/api/uric-acid/${id}`;
+                : type === 'uric' 
+                ? `/api/uric-acid/${id}` 
+                : `/api/blood-sugar/${id}`;
             
             await fetch(url, { method: 'DELETE' });
             loadHistory();
@@ -700,16 +864,29 @@
             const range = getDateRange(currentChartFilter);
             if (!range) return;
             
+            const user_id = document.getElementById('chart-user-select').value;
+            const params = new URLSearchParams();
+            if (user_id) {
+                params.append('user_id', user_id);
+            }
+            params.append('start_date', range.startDate);
+            params.append('end_date', range.endDate);
+            
             if (currentChartType === 'blood') {
-                const res = await fetch(`/api/blood-pressure?start_date=${range.startDate}&end_date=${range.endDate}`);
+                const res = await fetch(`/api/blood-pressure?${params.toString()}`);
                 let data = await res.json();
                 data = filterByTimePeriod(data, currentTimePeriod);
                 renderBloodChart(data.reverse());
-            } else {
-                const res = await fetch(`/api/uric-acid?start_date=${range.startDate}&end_date=${range.endDate}`);
+            } else if (currentChartType === 'uric') {
+                const res = await fetch(`/api/uric-acid?${params.toString()}`);
                 let data = await res.json();
                 data = filterByTimePeriod(data, currentTimePeriod);
                 renderUricChart(data.reverse());
+            } else {
+                const res = await fetch(`/api/blood-sugar?${params.toString()}`);
+                let data = await res.json();
+                data = filterByTimePeriod(data, currentTimePeriod);
+                renderSugarChart(data.reverse());
             }
         }
         
@@ -872,10 +1049,106 @@
             uricChart.setOption(option);
         }
         
+        function renderSugarChart(data) {
+            if (!sugarChart) {
+                sugarChart = echarts.init(document.getElementById('sugar-chart'));
+                window.addEventListener('resize', () => sugarChart.resize());
+            }
+            
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    formatter: function(params) {
+                        let result = params[0].name + '<br/>';
+                        params.forEach(param => {
+                            result += `${param.marker}${param.seriesName}: ${param.value} mmol/L<br/>`;
+                        });
+                        const item = data[params[0].dataIndex];
+                        if (item.remark) {
+                            result += `💬 备注: ${item.remark}`;
+                        }
+                        return result;
+                    }
+                },
+                legend: { data: ['空腹血糖', '餐后血糖'] },
+                grid: { left: '10%', right: '8%', bottom: '15%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    axisLabel: {
+                        formatter: function(value) {
+                            return value.replace('-', '/').replace('T', ' ').substr(0, 10);
+                        }
+                    },
+                    data: data.map(d => d.measure_time)
+                },
+                yAxis: { 
+                    type: 'value', 
+                    name: '血糖 (mmol/L)',
+                    axisLabel: {
+                        formatter: '{value} mmol/L'
+                    },
+                    min: 3,
+                    max: 10,
+                    interval: 1,
+                    markLine: {
+                        data: [
+                            { yAxis: 6.1, name: '空腹正常上限' },
+                            { yAxis: 7.8, name: '餐后正常上限' }
+                        ]
+                    }
+                },
+                series: [
+                    {
+                        name: '空腹血糖',
+                        type: 'line',
+                        smooth: true,
+                        data: data.map(d => d.fasting ? d.value : null),
+                        itemStyle: { color: '#ff6b6b' },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    },
+                    {
+                        name: '餐后血糖',
+                        type: 'line',
+                        smooth: true,
+                        data: data.map(d => !d.fasting ? d.value : null),
+                        itemStyle: { color: '#4ecdc4' },
+                        symbol: 'circle',
+                        symbolSize: 8
+                    }
+                ]
+            };
+            
+            sugarChart.setOption(option);
+        }
+        
+        // 保存表单数据到localStorage
+        function saveFormData(formId, data) {
+            localStorage.setItem(`form_${formId}`, JSON.stringify(data));
+        }
+        
+        // 从localStorage加载表单数据
+        function loadFormData(formId) {
+            const data = localStorage.getItem(`form_${formId}`);
+            return data ? JSON.parse(data) : null;
+        }
+        
+        // 保存选中的用户ID到localStorage
+        function saveSelectedUserId(key, userId) {
+            localStorage.setItem(key, userId);
+        }
+        
+        // 从localStorage加载选中的用户ID
+        function loadSelectedUserId(key) {
+            return localStorage.getItem(key);
+        }
+        
         document.getElementById('blood-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = {
+                user_id: parseInt(formData.get('user_id')),
                 systolic: parseInt(formData.get('systolic')),
                 diastolic: parseInt(formData.get('diastolic')),
                 heart_rate: formData.get('heart_rate') ? parseInt(formData.get('heart_rate')) : null,
@@ -889,7 +1162,11 @@
                 body: JSON.stringify(data)
             });
             
-            e.target.reset();
+            // 保存表单数据
+            saveFormData('blood', data);
+            // 保存选中的用户ID
+            saveSelectedUserId('last_user_id', data.user_id.toString());
+            
             alert('数据提交成功！');
             showInputType('blood');
         });
@@ -898,6 +1175,7 @@
             e.preventDefault();
             const formData = new FormData(e.target);
             const data = {
+                user_id: parseInt(formData.get('user_id')),
                 value: parseFloat(formData.get('value')),
                 measure_time: formData.get('measure_time'),
                 remark: formData.get('remark') || null
@@ -909,32 +1187,199 @@
                 body: JSON.stringify(data)
             });
             
-            e.target.reset();
+            // 保存表单数据
+            saveFormData('uric', data);
+            // 保存选中的用户ID
+            saveSelectedUserId('last_user_id', data.user_id.toString());
+            
             alert('数据提交成功！');
             showInputType('uric');
         });
         
-        async function loadDataStats() {
-            const bloodRes = await fetch('/api/blood-pressure');
-            const bloodData = await bloodRes.json();
+        document.getElementById('sugar-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = {
+                user_id: parseInt(formData.get('user_id')),
+                value: parseFloat(formData.get('value')),
+                fasting: parseInt(formData.get('fasting')),
+                measure_time: formData.get('measure_time'),
+                remark: formData.get('remark') || null
+            };
             
-            const uricRes = await fetch('/api/uric-acid');
-            const uricData = await uricRes.json();
+            await fetch('/api/blood-sugar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
             
-            const stats = document.getElementById('data-stats');
-            stats.innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 10px;">
-                    <div style="text-align: center; padding: 16px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                        <div style="font-size: 14px; color: #666; margin-bottom: 8px;">血压记录</div>
-                        <div style="font-size: 24px; font-weight: 600; color: #667eea;">${bloodData.length}</div>
+            // 保存表单数据
+            saveFormData('sugar', data);
+            // 保存选中的用户ID
+            saveSelectedUserId('last_user_id', data.user_id.toString());
+            
+            alert('数据提交成功！');
+            showInputType('sugar');
+        });
+        
+        async function loadUsers() {
+            const res = await fetch('/api/users');
+            users = await res.json();
+        }
+        
+        function loadUserSelects() {
+            const userSelects = [
+                document.getElementById('blood-user-select'),
+                document.getElementById('uric-user-select'),
+                document.getElementById('sugar-user-select'),
+                document.getElementById('history-user-select'),
+                document.getElementById('chart-user-select')
+            ];
+            
+            // 加载上一次选中的用户ID
+            const lastUserId = loadSelectedUserId('last_user_id');
+            
+            userSelects.forEach(select => {
+                if (select) {
+                    select.innerHTML = `<option value="">全部成员</option>` + users.map(user => 
+                        `<option value="${user.id}" ${lastUserId === user.id.toString() ? 'selected' : ''}>${user.name}</option>`
+                    ).join('');
+                }
+            });
+        }
+        
+        async function loadUserList() {
+            const userList = document.getElementById('user-list');
+            
+            userList.innerHTML = users.map(user => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #e0e0e0;">
+                    <div>
+                        <div style="font-weight: 500;">${user.name}</div>
                     </div>
-                    <div style="text-align: center; padding: 16px; border: 1px solid #e0e0e0; border-radius: 8px;">
-                        <div style="font-size: 14px; color: #666; margin-bottom: 8px;">血尿酸记录</div>
-                        <div style="font-size: 24px; font-weight: 600; color: #667eea;">${uricData.length}</div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="submit-btn" style="background: #4ecdc4; padding: 6px 12px; font-size: 13px;" onclick="editUser(${user.id}, '${user.name}')">编辑</button>
+                        <button class="submit-btn" style="background: #ff6b6b; padding: 6px 12px; font-size: 13px;" onclick="deleteUser(${user.id})">删除</button>
                     </div>
                 </div>
-            `;
+            `).join('');
         }
+        
+        function showAddUserForm() {
+            document.getElementById('user-form-card').style.display = 'block';
+            document.getElementById('user-form').reset();
+            document.querySelector('input[name="user_id"]').value = '';
+        }
+        
+        function hideAddUserForm() {
+            document.getElementById('user-form-card').style.display = 'none';
+        }
+        
+        function editUser(id, name) {
+            document.getElementById('user-form-card').style.display = 'block';
+            document.querySelector('input[name="user_id"]').value = id;
+            document.querySelector('input[name="name"]').value = name;
+        }
+        
+        async function deleteUser(id) {
+            if (!confirm('确定要删除这个用户吗？删除后该用户的所有健康记录也会被删除。')) return;
+            
+            const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            const result = await res.json();
+            
+            if (result.success) {
+                alert('用户删除成功！');
+                await loadUsers();
+                loadUserList();
+            } else {
+                alert(result.error || '用户删除失败');
+            }
+        }
+        
+        async function loadDataStats() {
+            const statsContainer = document.getElementById('data-stats');
+            statsContainer.innerHTML = '<p>加载中...</p>';
+            
+            try {
+                const [bloodRes, uricRes, sugarRes, usersRes] = await Promise.all([
+                    fetch('/api/blood-pressure'),
+                    fetch('/api/uric-acid'),
+                    fetch('/api/blood-sugar'),
+                    fetch('/api/users')
+                ]);
+                
+                const [bloodData, uricData, sugarData, usersData] = await Promise.all([
+                    bloodRes.json(),
+                    uricRes.json(),
+                    sugarRes.json(),
+                    usersRes.json()
+                ]);
+                
+                statsContainer.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div style="padding: 16px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: 600; color: #667eea;">${usersData.length}</div>
+                            <div style="color: #666; margin-top: 8px;">总用户数</div>
+                        </div>
+                        <div style="padding: 16px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: 600; color: #667eea;">${bloodData.length}</div>
+                            <div style="color: #666; margin-top: 8px;">血压记录</div>
+                        </div>
+                        <div style="padding: 16px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: 600; color: #667eea;">${uricData.length}</div>
+                            <div style="color: #666; margin-top: 8px;">血尿酸记录</div>
+                        </div>
+                        <div style="padding: 16px; background: #f8f9fa; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 24px; font-weight: 600; color: #667eea;">${sugarData.length}</div>
+                            <div style="color: #666; margin-top: 8px;">血糖记录</div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                statsContainer.innerHTML = '<p>加载统计数据失败</p>';
+            }
+        }
+        
+        function getUserName(userId) {
+            const user = users.find(u => u.id === userId);
+            return user ? user.name : '未知用户';
+        }
+        
+        document.getElementById('user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const userId = formData.get('user_id');
+            const data = {
+                name: formData.get('name')
+            };
+            
+            let res;
+            if (userId) {
+                // 更新用户
+                res = await fetch(`/api/users/${userId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                // 添加用户
+                res = await fetch('/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+            }
+            
+            const result = await res.json();
+            if (result.success) {
+                alert('用户保存成功！');
+                hideAddUserForm();
+                await loadUsers();
+                loadUserList();
+                loadUserSelects();
+            } else {
+                alert('用户保存失败');
+            }
+        });
         
         document.getElementById('password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
